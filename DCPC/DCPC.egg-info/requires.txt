@@ -1,0 +1,6 @@
+pymongo
+music21
+sshtunnel
+numpy
+torch
+tqdm
