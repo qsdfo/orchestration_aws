@@ -1,0 +1,17 @@
+README.md
+setup.py
+DatasetManager/__init__.py
+DatasetManager/all_datasets.py
+DatasetManager/build_db.py
+DatasetManager/chorale_dataset.py
+DatasetManager/chunk_sampler.py
+DatasetManager/config.py
+DatasetManager/dataset_manager.py
+DatasetManager/helpers.py
+DatasetManager/metadata.py
+DatasetManager/music_dataset.py
+DatasetManager.egg-info/PKG-INFO
+DatasetManager.egg-info/SOURCES.txt
+DatasetManager.egg-info/dependency_links.txt
+DatasetManager.egg-info/requires.txt
+DatasetManager.egg-info/top_level.txt
