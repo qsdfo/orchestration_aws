@@ -330,8 +330,9 @@ class UDPClientCustom(object):
             break
 
         self._sock.setblocking(0)
-        if allow_broadcast:
-            self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        # if allow_broadcast:
+        #     self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self._address = address
         self._port = port
@@ -342,7 +343,6 @@ class UDPClientCustom(object):
         Args:
             content: Message or bundle to be sent
         """
-        import pdb; pdb.set_trace()
         self._sock.sendto(content.dgram, (self._address, self._port))
 
 
