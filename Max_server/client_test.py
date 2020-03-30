@@ -1,5 +1,6 @@
 import socket
 
+# UDP_IP = "212.11.40.145"
 UDP_IP = "0.0.0.0"
 # UDP_IP = "63.33.36.17"
 UDP_PORT = 5001
