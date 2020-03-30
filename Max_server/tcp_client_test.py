@@ -1,12 +1,23 @@
 import socket
-TCP_IP = '63.33.36.17'
-TCP_PORT = 5003
-BUFFER_SIZE = 1024
-MESSAGE = str.encode("Yo TCP")
 
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect((TCP_IP, TCP_PORT))
-s.send(MESSAGE)
-data = s.recv(BUFFER_SIZE)
-s.close()
-print(f'received data: {data}')
+HOST = '63.33.36.17'
+PORT = 5003
+
+client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+client.connect((HOST, PORT))
+print(f'Connexion vers {HOST}:{PORT} reussie')
+
+message = 'Yo TCP'
+print(f'Envoi de : {message}')
+n = client.send(str.encode(message))
+if n != len(message):
+    print('Erreur envoi')
+else:
+    print('Envoi ok')
+
+print('Reception...')
+donnees = client.recv(1024)
+print('Recu :', donnees)
+
+print('Deconnexion')
+client.close()
