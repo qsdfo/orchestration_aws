@@ -241,45 +241,6 @@ class OrchestraServer(OSCServer):
         self.send('/piano_loaded', '0')
         return
 
-        # Remove prepended shit
-        if v == 'none':
-            return
-        v = re.sub(r'^MACOS:', '', v)
-        print(v)
-
-        #  Load input piano score
-        piano, _, rhythm_piano, orchestra_init, \
-        instruments_presence, orchestra_silenced_instruments, orchestra_unknown_instruments = \
-            self._model.data_processor_encoder.dataset.init_generation_filepath(
-                batch_size=1,
-                context_length=self.context_size,
-                filepath=v,
-                banned_instruments=self.banned_instruments,
-                unknown_instruments=self.unknown_instruments,
-                subdivision=self.subdivision)
-
-        self.piano = piano
-        self.durations_piano = np.asarray(list(rhythm_piano[1:]) + [self.subdivision]) - np.asarray(
-            list(rhythm_piano[:-1]) + [0])
-        self.orchestra_init = orchestra_init
-        self.instrument_presence = instruments_presence
-        self.orchestra_silenced_instruments = orchestra_silenced_instruments
-        self.orchestra_unknown_instruments = orchestra_unknown_instruments
-
-        print('piano score loaded...')
-
-        # Write an xml version of the score for printing in the patch
-        piano_writing = piano[0, self.context_size:-self.context_size]
-        piano_stream = self._model.dataset.piano_tensor_to_score(tensor_score=piano_writing,
-                                                                 format='xml',
-                                                                 durations=self.durations_piano,
-                                                                 subdivision=self.subdivision)
-        piano_xml_path = f'{self.writing_dir}/piano.xml'
-        piano_stream.write(fp=piano_xml_path, fmt='xml')
-        self.send('/piano_xml', piano_xml_path)
-        print('and sent')
-        return
-
     def orchestrate(self):
         if self.piano is None:
             print('No piano score has been inputted :(')
