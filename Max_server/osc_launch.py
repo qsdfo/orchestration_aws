@@ -14,6 +14,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--in_port', type=int, default=5000)
 parser.add_argument('--out_port', type=int, default=5001)
 parser.add_argument('--ip', type=str, default="127.0.0.1")
+parser.add_argument('--ip_client', type=str, default="127.0.0.1")
 # Model arguments
 parser.add_argument('--hierarchical', type=bool, default=False)
 parser.add_argument('--nade', type=bool, default=False)
@@ -108,6 +109,7 @@ if not os.path.isdir(writing_dir):
 server = OrchestraServer(args.in_port,
                          args.out_port,
                          args.ip,
+                         args.ip_client,
                          model=model,
                          subdivision=subdivision,
                          writing_dir=writing_dir)
