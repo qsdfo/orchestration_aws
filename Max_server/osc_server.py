@@ -47,6 +47,7 @@ class OSCServer(object):
         # Bindings for server
         self.init_bindings(self.osc_attributes)
         self.server = osc_server.BlockingOSCUDPServer((ip, in_port), self.dispatcher)
+        self.server.allow_reuse_address = True
         # Server properties
         self.debug = False
         self.in_port = in_port
@@ -331,7 +332,6 @@ class UDPClientCustom(object):
         self._sock.setblocking(0)
         if allow_broadcast:
             self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-        print("COOUCOU")
         self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self._address = address
         self._port = port
