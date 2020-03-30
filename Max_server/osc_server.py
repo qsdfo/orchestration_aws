@@ -35,7 +35,8 @@ class OSCServer(object):
         super(OSCServer, self).__init__()
         # OSC library objects
         self.dispatcher = dispatcher.Dispatcher()
-        self.client = udp_client.SimpleUDPClient(ip, out_port)
+        ip_client = '212.11.40.145'
+        self.client = udp_client.SimpleUDPClient(ip_client, out_port)
         # Bindings for server
         self.init_bindings(self.osc_attributes)
         self.server = osc_server.BlockingOSCUDPServer((ip, in_port), self.dispatcher)
