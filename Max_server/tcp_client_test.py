@@ -1,7 +1,8 @@
 import socket
 
 HOST = '63.33.36.17'
-PORT = 5003
+# HOST = '212.11.40.145'
+PORT = 5031
 
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client.connect((HOST, PORT))
