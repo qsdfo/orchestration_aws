@@ -309,7 +309,7 @@ class OrchestraServer(OSCServer):
 class UDPClientCustom(object):
     """OSC client to send :class:`OscMessage` or :class:`OscBundle` via UDP"""
 
-    def __init__(self, address: str, port: int, allow_broadcast: bool = False) -> None:
+    def __init__(self, address: str, port: int, allow_broadcast: bool = True) -> None:
         """Initialize client
 
         As this is UDP it will not actually make any attempt to connect to the
@@ -330,9 +330,8 @@ class UDPClientCustom(object):
             break
 
         self._sock.setblocking(0)
-        # if allow_broadcast:
-        #     self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-        self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        if allow_broadcast:
+            self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self._address = address
         self._port = port
