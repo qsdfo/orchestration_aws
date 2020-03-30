@@ -331,6 +331,7 @@ class UDPClientCustom(object):
         self._sock.setblocking(0)
         if allow_broadcast:
             self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        print("COOUCOU")
         self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self._address = address
         self._port = port
