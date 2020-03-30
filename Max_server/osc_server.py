@@ -79,7 +79,7 @@ class OSCServer(object):
 
     def send(self, address, content):
         """global method to send a message"""
-        if (self.debug):
+        if self.debug:
             print('Sending following message')
             print(address)
             print(content)
