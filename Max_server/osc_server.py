@@ -83,8 +83,6 @@ class OSCServer(object):
             print('Sending following message')
             print(address)
             print(content)
-        print(address)
-        import pdb; pdb.set_trace()
         self.client.send_message(address, content)
 
     def print(self, *args):
@@ -344,6 +342,7 @@ class UDPClientCustom(object):
         Args:
             content: Message or bundle to be sent
         """
+        import pdb; pdb.set_trace()
         self._sock.sendto(content.dgram, (self._address, self._port))
 
 
