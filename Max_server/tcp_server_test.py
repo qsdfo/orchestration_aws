@@ -1,6 +1,7 @@
 import socket
 ADRESSE = '0.0.0.0'
-PORT = 5031
+# ADRESSE = 'localhost'
+PORT = 5003
 
 serveur = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 serveur.bind((ADRESSE, PORT))
