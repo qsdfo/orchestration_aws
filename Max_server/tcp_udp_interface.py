@@ -196,7 +196,7 @@ def main(args):
                                   port_tcp=args.port_tcp,
                                   ip='127.0.0.1',
                                   ip_server=args.ip_server)
-    print(f'[Interface to server {args.ip_server} on port {args.port_tcp}]')
+    print(f'[Interface to server {args.ip_server} on port {args.port_tcp}]')
     print(f'[Local communication with Max: in-port={args.in_port_udp}, out_port={args.out_port_udp}]')
     interface.run()
 

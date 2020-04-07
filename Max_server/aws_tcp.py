@@ -83,7 +83,7 @@ def main(args):
     # Create server
     server_address = (args.ip, args.port)
     server = OrchestraServer(server_address, model, subdivision, writing_dir)
-    print(f'[Server listening to {args.ip} on port {args.port}]')
+    print(f'[Server listening to {args.ip} on port {args.port}]')
     server.serve_forever()
 
 
