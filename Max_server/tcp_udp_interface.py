@@ -1,7 +1,7 @@
 import argparse
 import pickle
 import socket
-import numpy as np
+
 # Helper function to parse attribute
 from pythonosc import dispatcher, osc_server
 from pythonosc.udp_client import SimpleUDPClient

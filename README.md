@@ -4,50 +4,60 @@ Automatic orchestration plug-in.
 Python server deployed on AWS with a Max4live device client.
 
 ## Instructions
-### Get access to AWS
-- Log in AWS dashboard
-- Click on *EC2* > *pair of keys* > *Create a new pair*
-- Choose a name for the key, create it and **download the .pem file** somewhere you can easily find it.
-- Open a terminal (CMD+tab > terminal)
-    - cd to the location of your file (mine was in Downloads, so I typed:)
-            
-            cd ; cd Downloads
-    - replacing *name_pem* with the name of your .pem file, type
+### Get authorisation to communicate with AWS instance
+- Get your public IP (https://whatismyipaddress.com/fr/mon-ip). 
+This is not necessary if you are on Sony network or VPN
+- send me your public IP (crestel.leopold@gmail.com) and wait for my confirmation
+
+### First time installation
+A python script will be ran on your computer to interface AWS instance and Ableton.
+Open a terminal (CMD + space: terminal).
+Go to the location of your choice on your computer
+
+    cd location
+    
+I would recommend creating a folder dedicated to the project
+
+    mkdir orchestration
+    cd orchestration
+
+Check that you have python3 installed
+    
+    python3 --version
+    
+If not, follow the instructions here to install it (and don't hesitate to contact me): https://docs.python-guide.org/starting/install3/osx/
         
-            mv name.pem  ~/.ssh/
-            chmod 400 ~/.ssh/name.pem
-            ssh-keygen -y -f ~/.ssh/name.pem
-- Send me (crestel.leopold@gmail.com) the public key which has been displayed on your screen (just copy/paste) 
-and wait till I granted you access to the AWS server
+If you don't have virtualenv (you can check by typing "virtualenv --version" in the terminal) do
 
-### Create an SSH tunnel
-Once first step is done, open a terminal (CMD + terminal) on your computer:
+    python -m pip install --user virtualenv
+        
+Create a virtualenv (prevent python modules that will be installed to overwrite previous intallations).
 
-    socat tcp4-listen:5005,reuseaddr,fork UDP:localhost:5002 &
-    ssh -R 5005:localhost:5005 -i "~~.ssh/name.pem" amazon_address
+    virtualenv venv -p python3
 
-That should have openned an ssh tunnel between AWS and your computer.
-You can now use the plug-in in an ableton live session on your computer.
-Just check in the plug-in that send port is 5001, receive port 5002, and ip send 63.33.36.17, 
-but these shoud be the default values 
+Then
 
-**If it does not work**, contact me and we'll have to try the version where you launch the server by yourself 
-
-    conda deactivate
-    socat -T15 udp4-recvfrom:5002,reuseaddr,fork tcp:localhost:5005 &
-    cd code/orchestration_aws
     source venv/bin/activate
-    cd Max_server
-    python osc_launch.py --ip=0.0.0.0 --ip_client=127.0.0.1 --in_port=5001 --out_port=5002
+    pip install python-osc
 
-## Improving server
-- GNU Socket options
-https://www.gnu.org/software/libc/manual/html_node/Socket_002dLevel-Options.html#Socket_002dLevel-Options
-- Python socket lib
-https://docs.python.org/2/library/socket.html
-- Pour une version plus légère dans le future, n'utilisant que socket 
-http://python.jpvweb.com/python/mesrecettespython/doku.php?id=client-serveur_udp_mini
-- Minimalist UDP communication example
-https://wiki.python.org/moin/UdpCommunication
-- Exemples client TCP: https://fiches-isn.readthedocs.io/fr/latest/FicheReseauxClient01.html
-- Exemples server TCP: https://fiches-isn.readthedocs.io/fr/latest/FicheReseauxServeur01.html
+Now, in the folder orchestration you created, 
+open a file called tcp_udp_interface.py and copy the following Python script (https://github.com/qsdfo/orchestration_aws/blob/master/Max_server/tcp_udp_interface.py).
+You can click on 'Raw' to copy/paste easily.
+Installation is done!
+
+### To be done everytime you want to use the plug-in
+Go to the location of the orchestration folder you created.
+    
+    cd path-to-orchestration/orchestration
+    
+Activate the virtualenv
+
+    source venv/bin/activate
+    
+Launch the intface
+
+    python tcp_udp_interface.py
+
+You can now use the plug-in in an ableton live session on your computer. 
+Just check in the plug-in that send port is 5002 and receive port 5003.
+    
