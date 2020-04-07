@@ -1,9 +1,7 @@
 import argparse
 import pickle
 import socket
-
 import numpy as np
-
 # Helper function to parse attribute
 from pythonosc import dispatcher, osc_server
 from pythonosc.udp_client import SimpleUDPClient
@@ -134,23 +132,28 @@ class TCP_UDP_interface(OSCServer):
     def __init__(self, **kwargs):
         self.osc_attributes = []
         # Latent paths variables
-        super(TCP_UDP_interface, self).__init__(**kwargs)
-        self.debug = kwargs.get('debug')
-        self.port_tcp = kwargs.get('port_tcp')
-        self.port_udp = kwargs.get('port_udp')
+        super(TCP_UDP_interface, self).__init__(kwargs['in_port'], kwargs['out_port'], kwargs['ip'],)
+        self.port_tcp = kwargs['port_tcp']
+        self.ip_server = kwargs['ip_server']
         self.max_message = 8192
 
-    def interface_TCP_to_AWS(self, function_name, data):
+    def init_bindings(self, osc_attributes=[]):
+        """ Set of OSC messages handled """
+        super(TCP_UDP_interface, self).init_bindings(self.osc_attributes)
+        self.dispatcher.map('/set_temperature', osc_parse(self.set_temperature))
+        self.dispatcher.map('/load_piano_score', osc_parse(self.load_piano_score))
+        self.dispatcher.map('/orchestrate', osc_parse(self.orchestrate))
+
+    def interface_TCP_to_AWS(self, function_name, value):
         # Send data to AWS
-        data = dict(
-            data=data,
+        message = pickle.dumps(dict(
+            value=value,
             function=function_name
-        )
-        message = pickle.dumps(data)
+        ))
         # Create a socket (SOCK_STREAM means a TCP socket)
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             # Connect to server and send data
-            sock.connect(('127.0.0.1', self.port_tcp))
+            sock.connect((self.ip_server, self.port_tcp))
             sock.sendall(message)
             # Receive data from the server and shut down
             received = pickle.loads(sock.recv(self.max_message))
@@ -158,17 +161,17 @@ class TCP_UDP_interface(OSCServer):
         # Send to UDP
         if received['function'] == 'piano_loaded':
             self.send('/piano_loaded', '0')
-        elif received['function', 'orchestrate']:
-            max_length = received['max_length']
+        elif received['function'] == 'orchestrate':
+            max_length = received['value']['max_length']
             self.send(f'/init_orchestration', max_length)
-            list_formatted = received['list_formatted']
+            list_formatted = received['value']['list_formatted']
             self.send(f'/orchestration', list_formatted)
         elif received['function'] == 'nothing':
             pass
 
     def set_temperature(self, v):
         # Send to AWS
-        self.interface_TCP_to_AWS('set_temperature', v)
+        self.interface_TCP_to_AWS('set_temperature', value=v)
 
     def load_piano_score(self, *v):
         """
@@ -179,43 +182,48 @@ class TCP_UDP_interface(OSCServer):
         # Remove prepended shit
         if v == 'none':
             return
-        self.interface_TCP_to_AWS('load_piano_score', v)
+        self.interface_TCP_to_AWS('load_piano_score', value=v)
 
     def orchestrate(self):
-        if self.piano is None:
-            print('No piano score has been inputted :(')
-            return
-        self.interface_TCP_to_AWS('orchestrate', data=[])
+        self.interface_TCP_to_AWS('orchestrate', value=[])
         self.send('/orchestration_done', '0')
         return
 
 
 def main(args):
-    interface = TCP_UDP_interface()
+    interface = TCP_UDP_interface(in_port=args.in_port_udp,
+                                  out_port=args.out_port_udp,
+                                  port_tcp=args.port_tcp,
+                                  ip='127.0.0.1',
+                                  ip_server=args.ip_server)
+    print(f'[Interface to server {args.ip_server} on port {args.port_tcp}]')
+    print(f'[Local communication with Max: in-port={args.in_port_udp}, out_port={args.out_port_udp}]')
+    interface.run()
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--ip', type=str, default='127.0.0.1')
+    parser.add_argument('--ip_server', type=str, default='63.33.36.17')
     parser.add_argument('--port_tcp', type=int, default=5001)
-    parser.add_argument('--port_udp', type=int, default=5002)
+    parser.add_argument('--in_port_udp', type=int, default=5002)
+    parser.add_argument('--out_port_udp', type=int, default=5003)
     args = parser.parse_args()
     main(args)
 
-    HOST, PORT = args.ip, args.port_tcp
-    np_array = np.random.rand(3, 2)
-    data = dict(
-        np_array=np_array,
-        function='orchestrate'
-    )
-    message = pickle.dumps(data)
-    # Create a socket (SOCK_STREAM means a TCP socket)
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        # Connect to server and send data
-        sock.connect((HOST, PORT))
-        sock.sendall(message)
-        # Receive data from the server and shut down
-        received = str(sock.recv(1024), "utf-8")
-
-    print("Sent:     {}".format(data))
-    print("Received: {}".format(received))
+    # HOST, PORT = args.ip_server, args.port_tcp
+    # np_array = np.random.rand(3, 2)
+    # data = dict(
+    #     np_array=np_array,
+    #     function='orchestrate'
+    # )
+    # message = pickle.dumps(data)
+    # # Create a socket (SOCK_STREAM means a TCP socket)
+    # with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+    #     # Connect to server and send data
+    #     sock.connect((HOST, PORT))
+    #     sock.sendall(message)
+    #     # Receive data from the server and shut down
+    #     received = str(sock.recv(1024), "utf-8")
+    #
+    # print("Sent:     {}".format(data))
+    # print("Received: {}".format(received))

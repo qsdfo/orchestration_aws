@@ -1,11 +1,13 @@
 import argparse
+import math
 import os
 import pickle
 import socketserver
-
+import numpy as np
 import dataset_import
 import torch
 from DatasetManager.dataset_manager import DatasetManager
+from Transformer.generate import generation_arrangement
 from Transformer.transformer import Transformer
 
 
@@ -81,6 +83,7 @@ def main(args):
     # Create server
     server_address = (args.ip, args.port)
     server = OrchestraServer(server_address, model, subdivision, writing_dir)
+    print(f'[Server listening to {args.ip} on port {args.port}]')
     server.serve_forever()
 
 
@@ -96,10 +99,31 @@ class _TCPHandler(socketserver.BaseRequestHandler):
         """
         # Get data
         self.data = pickle.loads(self.request.recv(8192).strip())
-        # Process
-        print(self.data['np_array'])
+        function_name = self.data['function']
+        value = self.data['value']
+
+        # Dispatch
+        if function_name == 'set_temperature':
+            self.server.set_temperature(value)
+            ret_value = 1
+            ret_function = 'nothing'
+        elif function_name == 'load_piano_score':
+            self.server.load_piano_score(value)
+            ret_function = 'piano_loaded'
+            ret_value = 1
+        elif function_name == 'orchestrate':
+            max_length, list_formatted = self.server.orchestrate()
+            ret_value = dict(
+                max_length=max_length,
+                list_formatted=list_formatted
+            )
+            ret_function = 'orchestrate'
         # Return
-        self.request.sendall(bytes("AUREVOIR\n", "utf-8"))
+        ret_message = pickle.dumps(dict(
+            value=ret_value,
+            function=ret_function
+        ))
+        self.request.sendall(ret_message)
 
 
 class OrchestraServer(socketserver.TCPServer):
@@ -107,7 +131,7 @@ class OrchestraServer(socketserver.TCPServer):
         # server
         super().__init__(server_address, _TCPHandler)
 
-        # loacl computation
+        # local computation
         self._model = model
         self.writing_dir = writing_dir
         self.subdivision = subdivision
@@ -140,131 +164,126 @@ class OrchestraServer(socketserver.TCPServer):
             'Contrabass': 14
         }
 
-    # def set_temperature(self, v):
-    #     self.temperature = v
-    #     print(v)
-    #
-    # def load_piano_score(self, *v):
-    #     """
-    #
-    #     When a midi/xm file is dropped in the max/msp patch, it is send to this function.
-    #     Reads the input file in the self.piano matrix
-    #     """
-    #     # Remove prepended shit
-    #     if v == 'none':
-    #         return
-    #
-    #     length = math.ceil(v[-1] * self.subdivision)
-    #     if length < 1:
-    #         return
-    #
-    #     # Remove prefix and suffix useless messages
-    #     v = v[2:-2]
-    #
-    #     # List to pianoroll
-    #     pianoroll = np.zeros((length, 128))
-    #     onsets = np.zeros((length, 128))
-    #     pitch = None
-    #     start_t = None
-    #     duration = None
-    #     velocity = None
-    #     for counter, message in enumerate(v):
-    #         if counter % 6 == 0:
-    #             continue
-    #         elif counter % 6 == 1:
-    #             pitch = message
-    #         elif counter % 6 == 2:
-    #             start_t = int(message * self.subdivision)
-    #         elif counter % 6 == 3:
-    #             duration = int(message * self.subdivision)
-    #         elif counter % 6 == 4:
-    #             velocity = message
-    #         elif counter % 6 == 5:
-    #             pianoroll[start_t:start_t + duration, pitch] = 100
-    #             onsets[start_t, pitch] = 100
-    #
-    #     piano, _, rhythm_piano, orchestra_init, \
-    #     instruments_presence, orchestra_silenced_instruments, orchestra_unknown_instruments = \
-    #         self._model.data_processor_decoder.dataset.pianoroll_to_formated_tensor(
-    #             pianoroll_piano={'Piano': pianoroll},
-    #             onsets_piano={'Piano': onsets},
-    #             batch_size=1,
-    #             context_length=self.context_size,
-    #             banned_instruments=self.banned_instruments,
-    #             unknown_instruments=self.unknown_instruments
-    #         )
-    #
-    #     self.piano = piano
-    #     self.durations_piano = np.asarray(list(rhythm_piano[1:]) + [self.subdivision]) - np.asarray(
-    #         list(rhythm_piano[:-1]) + [0])
-    #     self.orchestra_init = orchestra_init
-    #     self.instrument_presence = instruments_presence
-    #     self.orchestra_silenced_instruments = orchestra_silenced_instruments
-    #     self.orchestra_unknown_instruments = orchestra_unknown_instruments
-    #
-    #     print('piano score loaded!')
-    #     self.send('/piano_loaded', '0')
-    #     return
-    #
-    # def orchestrate(self):
-    #     if self.piano is None:
-    #         print('No piano score has been inputted :(')
-    #         return
-    #
-    #     print('orchestrating...')
-    #     print(f'T={self.temperature}')
-    #
-    #     orchestra = generation_arrangement(
-    #         model=self._model,
-    #         piano=self.piano,
-    #         orchestra_init=self.orchestra_init,
-    #         orchestra_silenced_instruments=self.orchestra_silenced_instruments,
-    #         instruments_presence=self.instrument_presence,
-    #         temperature=self.temperature,
-    #         batch_size=1,
-    #         number_sampling_steps=1
-    #     )
-    #
-    #     # Write each instrument in the orchestration as a separate xml file
-    #     orchestra_writing = orchestra[0, self.context_size:-self.context_size]
-    #
-    #     _, _, score_dict = self._model.dataset.orchestra_tensor_to_score(
-    #         tensor_score=orchestra_writing,
-    #         format='midi',
-    #         durations=self.durations_piano,
-    #         subdivision=self.subdivision)
-    #
-    #     # For Ableton
-    #     #  First get longest clip and send init_orchestra to max
-    #     max_length = 0
-    #     for _, list in score_dict.items():
-    #         if len(list) == 0:
-    #             continue
-    #         elem = list[-1]
-    #         max_length = max(max_length, elem[1] + elem[2])
-    #     if max_length == 0:
-    #         return
-    #     self.send(f'/init_orchestration', max_length / self.subdivision)
-    #
-    #     # Then send the content
-    #     for instrument_name, list in score_dict.items():
-    #         if len(list) == 0:
-    #             continue
-    #         list_formatted = [self.instrument_to_index[instrument_name]]
-    #         for elem in list:
-    #             list_formatted.append(elem[0])
-    #             list_formatted.append(elem[1] / self.subdivision)  # start
-    #             list_formatted.append(elem[2] / self.subdivision)  # duration
-    #         self.send(f'/orchestration', list_formatted)
-    #
-    #     print('done')
-    #     self.send('/orchestration_done', '0')
-    #     return
+    def set_temperature(self, v):
+        self.temperature = v
+        print(v)
+
+    def load_piano_score(self, v):
+        """
+
+        When a midi/xm file is dropped in the max/msp patch, it is send to this function.
+        Reads the input file in the self.piano matrix
+        """
+        # Remove prepended shit
+        if v == 'none':
+            return
+
+        length = math.ceil(v[-1] * self.subdivision)
+        if length < 1:
+            return
+
+        # Remove prefix and suffix useless messages
+        v = v[2:-2]
+
+        # List to pianoroll
+        pianoroll = np.zeros((length, 128))
+        onsets = np.zeros((length, 128))
+        pitch = None
+        start_t = None
+        duration = None
+        velocity = None
+        for counter, message in enumerate(v):
+            if counter % 6 == 0:
+                continue
+            elif counter % 6 == 1:
+                pitch = message
+            elif counter % 6 == 2:
+                start_t = int(message * self.subdivision)
+            elif counter % 6 == 3:
+                duration = int(message * self.subdivision)
+            elif counter % 6 == 4:
+                velocity = message
+            elif counter % 6 == 5:
+                pianoroll[start_t:start_t + duration, pitch] = 100
+                onsets[start_t, pitch] = 100
+
+        piano, _, rhythm_piano, orchestra_init, \
+        instruments_presence, orchestra_silenced_instruments, orchestra_unknown_instruments = \
+            self._model.data_processor_decoder.dataset.pianoroll_to_formated_tensor(
+                pianoroll_piano={'Piano': pianoroll},
+                onsets_piano={'Piano': onsets},
+                batch_size=1,
+                context_length=self.context_size,
+                banned_instruments=self.banned_instruments,
+                unknown_instruments=self.unknown_instruments
+            )
+
+        self.piano = piano
+        self.durations_piano = np.asarray(list(rhythm_piano[1:]) + [self.subdivision]) - np.asarray(
+            list(rhythm_piano[:-1]) + [0])
+        self.orchestra_init = orchestra_init
+        self.instrument_presence = instruments_presence
+        self.orchestra_silenced_instruments = orchestra_silenced_instruments
+        self.orchestra_unknown_instruments = orchestra_unknown_instruments
+        print('piano score loaded!')
+        return
+
+    def orchestrate(self):
+        if self.piano is None:
+            print('No piano score has been inputted :(')
+            return
+
+        print('orchestrating...')
+        print(f'T={self.temperature}')
+
+        orchestra = generation_arrangement(
+            model=self._model,
+            piano=self.piano,
+            orchestra_init=self.orchestra_init,
+            orchestra_silenced_instruments=self.orchestra_silenced_instruments,
+            instruments_presence=self.instrument_presence,
+            temperature=self.temperature,
+            batch_size=1,
+            number_sampling_steps=1
+        )
+
+        # Write each instrument in the orchestration as a separate xml file
+        orchestra_writing = orchestra[0, self.context_size:-self.context_size]
+
+        _, _, score_dict = self._model.dataset.orchestra_tensor_to_score(
+            tensor_score=orchestra_writing,
+            format='midi',
+            durations=self.durations_piano,
+            subdivision=self.subdivision)
+
+        # For Ableton
+        #  First get longest clip and send init_orchestra to max
+        max_length = 0
+        for _, list in score_dict.items():
+            if len(list) == 0:
+                continue
+            elem = list[-1]
+            max_length = max(max_length, elem[1] + elem[2])
+        if max_length == 0:
+            return
+        max_length = max_length / self.subdivision
+
+        # Then send the content
+        for instrument_name, list in score_dict.items():
+            if len(list) == 0:
+                continue
+            list_formatted = [self.instrument_to_index[instrument_name]]
+            for elem in list:
+                list_formatted.append(elem[0])
+                list_formatted.append(elem[1] / self.subdivision)  # start
+                list_formatted.append(elem[2] / self.subdivision)  # duration
+        print('done')
+        return max_length, list_formatted
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--ip', type=str, default='127.0.0.1')
+    parser.add_argument('--ip', type=str, default='0.0.0.0')
     parser.add_argument('--port', type=int, default=5001)
     # Model arguments
     parser.add_argument('--hierarchical', type=bool, default=False)
