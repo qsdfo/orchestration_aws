@@ -79,7 +79,7 @@ def main(args):
         os.makedirs(writing_dir)
 
     # Create server
-    server_address = ('127.0.0.1', args.port)
+    server_address = (args.ip, args.port)
     server = OrchestraServer(server_address, model, subdivision, writing_dir)
     server.serve_forever()
 
@@ -264,6 +264,7 @@ class OrchestraServer(socketserver.TCPServer):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('--ip', type=int, default='127.0.0.1')
     parser.add_argument('--port', type=int, default=5001)
     # Model arguments
     parser.add_argument('--hierarchical', type=bool, default=False)
