@@ -187,7 +187,6 @@ class TCP_UDP_interface(OSCServer):
                     continue
                 self.send(f'/orchestration', list_formatted)
             sanity_check = int(sum([sum(v) for v in formatted_output.values()]))
-            self.send(f'/orchestration', list_formatted)
             if sanity_check_received != sanity_check:
                 print(f'#### Data lost: orchestration from AWS to local')
         elif received['function'] == 'nothing':
