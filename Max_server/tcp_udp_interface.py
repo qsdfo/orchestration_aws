@@ -3,6 +3,8 @@ import pickle
 import socket
 
 # Helper function to parse attribute
+import struct
+
 from pythonosc import dispatcher, osc_server
 from pythonosc.udp_client import SimpleUDPClient
 
@@ -155,8 +157,20 @@ class TCP_UDP_interface(OSCServer):
             # Connect to server and send data
             sock.connect((self.ip_server, self.port_tcp))
             sock.sendall(message)
-            # Receive data from the server and shut down
-            received = pickle.loads(sock.recv(self.max_message))
+
+            # Load data (dynamic size)
+            payload_size = struct.calcsize('L')
+            data_rcv = b''
+            while len(data_rcv) < payload_size:
+                data_rcv += sock.recv(4096)
+            packed_msg_size = data_rcv[:payload_size]
+            data_rcv = data_rcv[payload_size:]
+            msg_size = struct.unpack("L", packed_msg_size)[0]
+            # Retrieve all data based on message size
+            while len(data_rcv) < msg_size:
+                data_rcv += sock.recv(4096)
+
+            received = pickle.loads(data_rcv)
 
         # Send to UDP
         if received['function'] == 'piano_loaded':

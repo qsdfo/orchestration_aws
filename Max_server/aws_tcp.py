@@ -3,6 +3,8 @@ import math
 import os
 import pickle
 import socketserver
+import struct
+
 import numpy as np
 import dataset_import
 import torch
@@ -124,7 +126,9 @@ class _TCPHandler(socketserver.BaseRequestHandler):
             value=ret_value,
             function=ret_function
         ))
-        self.request.sendall(ret_message)
+        length_message = struct.pack('L', len(ret_message))
+        packet = length_message + ret_message
+        self.request.sendall(packet)
 
 
 class OrchestraServer(socketserver.TCPServer):
