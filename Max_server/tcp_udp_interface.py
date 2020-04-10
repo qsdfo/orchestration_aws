@@ -190,7 +190,6 @@ class TCP_UDP_interface(OSCServer):
             self.send(f'/orchestration', list_formatted)
             if sanity_check_received != sanity_check:
                 print(f'#### Data lost: orchestration from AWS to local')
-            print(f'Number of orchestral elements: {len(list_formatted)}')
         elif received['function'] == 'nothing':
             pass
 
