@@ -171,7 +171,9 @@ class TCP_UDP_interface(OSCServer):
 
     def set_temperature(self, v):
         # Send to AWS
+        print(f'Set temperature: {v}')
         self.interface_TCP_to_AWS('set_temperature', value=v)
+        print(f'... piano score loaded')
 
     def load_piano_score(self, *v):
         """
@@ -179,14 +181,17 @@ class TCP_UDP_interface(OSCServer):
         When a midi/xm file is dropped in the max/msp patch, it is send to this function.
         Reads the input file in the self.piano matrix
         """
+        print(f'Sending piano score to server: {v}...')
         # Remove prepended shit
         if v == 'none':
             return
         self.interface_TCP_to_AWS('load_piano_score', value=v)
 
     def orchestrate(self):
+        print(f'Request orchestration to server...')
         self.interface_TCP_to_AWS('orchestrate', value=[])
         self.send('/orchestration_done', '0')
+        print(f'...done!')
         return
 
 
