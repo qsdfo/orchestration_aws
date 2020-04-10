@@ -108,14 +108,15 @@ class _TCPHandler(socketserver.BaseRequestHandler):
             ret_value = 1
             ret_function = 'nothing'
         elif function_name == 'load_piano_score':
-            self.server.load_piano_score(value)
+            sanity_check = self.server.load_piano_score(value)
             ret_function = 'piano_loaded'
-            ret_value = 1
+            ret_value = sanity_check
         elif function_name == 'orchestrate':
-            max_length, list_formatted = self.server.orchestrate()
+            max_length, sanity_check, formatted_output = self.server.orchestrate()
             ret_value = dict(
                 max_length=max_length,
-                list_formatted=list_formatted
+                sanity_check=sanity_check,
+                formatted_output=formatted_output
             )
             ret_function = 'orchestrate'
         # Return
@@ -174,10 +175,10 @@ class OrchestraServer(socketserver.TCPServer):
         When a midi/xm file is dropped in the max/msp patch, it is send to this function.
         Reads the input file in the self.piano matrix
         """
-        # Remove prepended shit
-        if v == 'none':
-            return
 
+        sanity_check = int(sum([e for e in v if type(e) != str]))
+
+        # Remove prepended shit
         length = math.ceil(v[-1] * self.subdivision)
         if length < 1:
             return
@@ -226,7 +227,7 @@ class OrchestraServer(socketserver.TCPServer):
         self.orchestra_silenced_instruments = orchestra_silenced_instruments
         self.orchestra_unknown_instruments = orchestra_unknown_instruments
         print('piano score loaded!')
-        return
+        return sanity_check
 
     def orchestrate(self):
         if self.piano is None:
@@ -268,7 +269,8 @@ class OrchestraServer(socketserver.TCPServer):
             return
         max_length = max_length / self.subdivision
 
-        # Then send the content
+        # Then build the content
+        formatted_output = {}
         for instrument_name, list in score_dict.items():
             if len(list) == 0:
                 continue
@@ -277,8 +279,13 @@ class OrchestraServer(socketserver.TCPServer):
                 list_formatted.append(elem[0])
                 list_formatted.append(elem[1] / self.subdivision)  # start
                 list_formatted.append(elem[2] / self.subdivision)  # duration
+            formatted_output[instrument_name] = list_formatted
         print('done')
-        return max_length, list_formatted
+
+        # Sanity check
+        sanity_check = int(sum([sum(v) for v in formatted_output.values()]))
+
+        return max_length, sanity_check, formatted_output
 
 
 if __name__ == '__main__':

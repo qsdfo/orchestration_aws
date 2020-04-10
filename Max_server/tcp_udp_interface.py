@@ -161,11 +161,22 @@ class TCP_UDP_interface(OSCServer):
         # Send to UDP
         if received['function'] == 'piano_loaded':
             self.send('/piano_loaded', '0')
+            sanity_check_from_server = received['value']
+            return sanity_check_from_server
         elif received['function'] == 'orchestrate':
             max_length = received['value']['max_length']
             self.send(f'/init_orchestration', max_length)
-            list_formatted = received['value']['list_formatted']
+            sanity_check_received = received['value']['sanity_check']
+            formatted_output = received['value']['formatted_output']
+            for _, list_formatted in formatted_output.items():
+                if len(list_formatted) == 0:
+                    continue
+                self.send(f'/orchestration', list_formatted)
+            sanity_check = int(sum([sum(v) for v in formatted_output.values()]))
             self.send(f'/orchestration', list_formatted)
+            if sanity_check_received != sanity_check:
+                print(f'#### Data lost: orchestration from AWS to local')
+            print(f'Number of orchestral elements: {len(list_formatted)}')
         elif received['function'] == 'nothing':
             pass
 
@@ -173,7 +184,6 @@ class TCP_UDP_interface(OSCServer):
         # Send to AWS
         print(f'Set temperature: {v}')
         self.interface_TCP_to_AWS('set_temperature', value=v)
-        print(f'... piano score loaded')
 
     def load_piano_score(self, *v):
         """
@@ -181,11 +191,14 @@ class TCP_UDP_interface(OSCServer):
         When a midi/xm file is dropped in the max/msp patch, it is send to this function.
         Reads the input file in the self.piano matrix
         """
-        print(f'Sending piano score to server: {v}...')
-        # Remove prepended shit
+        print(f'Sending piano score to server:...')
         if v == 'none':
             return
-        self.interface_TCP_to_AWS('load_piano_score', value=v)
+        sanity_check = sum([e for e in v if type(e)!=str])
+        sanity_check_from_server = self.interface_TCP_to_AWS('load_piano_score', value=v)
+        if sanity_check_from_server != sanity_check:
+            print(f'#### Data lost: piano clip from local to AWS')
+        print(f'... piano score loaded')
 
     def orchestrate(self):
         print(f'Request orchestration to server...')
