@@ -56,6 +56,8 @@ Activate the virtualenv
     
 Launch the intface
 
+    cd Max_server
+    
     python tcp_udp_interface.py
 
 You can now use the plug-in in an ableton live session on your computer. 
