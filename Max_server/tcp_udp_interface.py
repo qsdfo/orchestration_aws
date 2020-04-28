@@ -1,4 +1,4 @@
-import argparse
+# import argparse
 import pickle
 import socket
 
@@ -134,7 +134,7 @@ class TCP_UDP_interface(OSCServer):
     def __init__(self, **kwargs):
         self.osc_attributes = []
         # Latent paths variables
-        super(TCP_UDP_interface, self).__init__(kwargs['in_port'], kwargs['out_port'], kwargs['ip'],)
+        super(TCP_UDP_interface, self).__init__(kwargs['in_port'], kwargs['out_port'], kwargs['ip'], )
         self.port_tcp = kwargs['port_tcp']
         self.ip_server = kwargs['ip_server']
         self.max_message = 8192
@@ -206,7 +206,7 @@ class TCP_UDP_interface(OSCServer):
         print(f'Sending piano score to server:...')
         if v == 'none':
             return
-        sanity_check = sum([e for e in v if type(e)!=str])
+        sanity_check = sum([e for e in v if type(e) != str])
         sanity_check_from_server = self.interface_TCP_to_AWS('load_piano_score', value=v)
         if sanity_check_from_server != sanity_check:
             print(f'#### Data lost: piano clip from local to AWS')
@@ -221,24 +221,30 @@ class TCP_UDP_interface(OSCServer):
 
 
 def main(args):
-    interface = TCP_UDP_interface(in_port=args.in_port_udp,
-                                  out_port=args.out_port_udp,
-                                  port_tcp=args.port_tcp,
+    interface = TCP_UDP_interface(in_port=args['in_port_udp'],
+                                  out_port=args['out_port_udp'],
+                                  port_tcp=args['port_tcp'],
                                   ip='127.0.0.1',
-                                  ip_server=args.ip_server)
-    print(f'[Interface to server {args.ip_server} on port {args.port_tcp}]')
-    print(f'[Local communication with Max: in-port={args.in_port_udp}, out_port={args.out_port_udp}]')
+                                  ip_server=args['ip_server'])
+    print(f'[Interface to server {args["ip_server"]} on port {args["port_tcp"]}]')
+    print(f'[Local communication with Max: in-port={args["in_port_udp"]}, out_port={args["out_port_udp"]}]')
     interface.run()
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--ip_server', type=str, default='63.33.36.17')
-    parser.add_argument('--port_tcp', type=int, default=5001)
-    parser.add_argument('--in_port_udp', type=int, default=5002)
-    parser.add_argument('--out_port_udp', type=int, default=5003)
-    args = parser.parse_args()
-    main(args)
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument('--ip_server', type=str, default='63.33.36.17')
+    # parser.add_argument('--port_tcp', type=int, default=5001)
+    # parser.add_argument('--in_port_udp', type=int, default=5002)
+    # parser.add_argument('--out_port_udp', type=int, default=5003)
+    # args = parser.parse_args()
+    args = dict(
+        ip_server='63.33.36.17',
+        port_tcp=5001,
+        in_port_udp=5002,
+        out_port_udp=5003
+    )
+    main(args=args)
 
     # HOST, PORT = args.ip_server, args.port_tcp
     # np_array = np.random.rand(3, 2)
