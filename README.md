@@ -46,6 +46,8 @@ You can click on 'Raw' to copy/paste easily.
 Installation is done!
 
 ### To be done everytime you want to use the plug-in
+**First** open Ableton Live and open VST.
+ 
 Go to the location of the orchestration folder you created.
     
     cd path-to-orchestration/orchestration
