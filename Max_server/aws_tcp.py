@@ -271,7 +271,9 @@ class OrchestraServer(socketserver.TCPServer):
             max_length = max(max_length, elem[1] + elem[2])
         if max_length == 0:
             return
+        print(f"QIUZDGHS: {max_length}, {self.subdivision}")
         max_length = max_length / self.subdivision
+
 
         # Then build the content
         formatted_output = {}
