@@ -224,8 +224,7 @@ class OrchestraServer(socketserver.TCPServer):
             )
 
         self.piano = piano
-        self.durations_piano = np.asarray(list(rhythm_piano[1:]) + [self.subdivision]) - np.asarray(
-            list(rhythm_piano[:-1]) + [0])
+        self.durations_piano = np.asarray(rhythm_piano[1:]) - np.asarray(rhythm_piano[:-1])
         self.orchestra_init = orchestra_init
         self.instrument_presence = instruments_presence
         self.orchestra_silenced_instruments = orchestra_silenced_instruments

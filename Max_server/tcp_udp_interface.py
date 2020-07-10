@@ -241,15 +241,14 @@ if __name__ == '__main__':
     main(args=args)
 
     # import argparse
-    # import numpy as np
-    #
     # parser = argparse.ArgumentParser()
     # parser.add_argument('--ip_server', type=str, default='63.33.36.17')
     # parser.add_argument('--port_tcp', type=int, default=5001)
     # parser.add_argument('--in_port_udp', type=int, default=5002)
     # parser.add_argument('--out_port_udp', type=int, default=5003)
     # args = parser.parse_args()
-    #
+    # main(args=vars(args))
+
     # HOST, PORT = args.ip_server, args.port_tcp
     # np_array = np.random.rand(3, 2)
     # data = dict(

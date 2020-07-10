@@ -1508,6 +1508,9 @@ class ArrangementDataset(MusicDataset):
                 frame_index=frame_index)
             piano_tensor.append(piano_t_encoded)
 
+        # Add the lenght of the piano clip, to know the duration of the last event
+        rhythm_piano.append(len(pianoroll_piano['Piano']))
+
         # Prepend rests frames at the beginning and end of the piano score
         piano_tensor = [self.precomputed_vectors_piano[PAD_SYMBOL]] * (context_length - 1) + \
                        [self.precomputed_vectors_piano[START_SYMBOL]] + \
